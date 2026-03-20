@@ -186,6 +186,11 @@ export default function SearchResults({
 
   const fetchSummary = async (item: SearchItem) => {
     const key = getSummaryKey(item);
+    const existing = summaries[key];
+
+    if (existing?.loading || existing?.text) {
+      return;
+    }
 
     setSummaries((prev) => ({
       ...prev,
@@ -309,6 +314,12 @@ export default function SearchResults({
                     key={item.paperID ?? `${startIdx}-${idx}`}
                     className="opacity-90 text-base sm:text-xl rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:shadow-[0_10px_30px_rgba(34,211,238,0.18)]"
                   >
+                    {(() => {
+                      const summaryState = summaries[getSummaryKey(item)];
+                      const summaryLocked = Boolean(summaryState?.text);
+
+                      return (
+                        <>
                     <Link
                       href={item.url}
                       className="text-blue-300 hover:underline"
@@ -325,33 +336,39 @@ export default function SearchResults({
                       <button
                         type="button"
                         onClick={() => fetchSummary(item)}
-                        className="rounded-lg border border-white/25 px-3 py-2 text-sm text-white hover:bg-white/10 hover:text-white transition"
+                        disabled={summaryState?.loading || summaryLocked}
+                        className="rounded-lg border border-white/25 px-3 py-2 text-sm text-white hover:bg-white/10 hover:text-white transition disabled:pointer-events-none disabled:opacity-60"
                       >
-                        {summaries[getSummaryKey(item)]?.loading
+                        {summaryState?.loading
                           ? "Generating summary..."
-                          : "AI Summary"}
+                          : summaryLocked
+                            ? "Summary generated"
+                            : "AI Summary"}
                       </button>
 
-                      {summaries[getSummaryKey(item)]?.source && (
+                      {summaryState?.source && (
                         <span className="text-xs opacity-60">
-                          {summaries[getSummaryKey(item)]?.source === "openai"
+                          {summaryState?.source === "openai"
                             ? "AI generated"
                             : "Fallback summary"}
                         </span>
                       )}
                     </div>
 
-                    {summaries[getSummaryKey(item)]?.error && (
+                    {summaryState?.error && (
                       <p className="mt-2 text-sm text-red-300">
-                        {summaries[getSummaryKey(item)]?.error}
+                        {summaryState?.error}
                       </p>
                     )}
 
-                    {summaries[getSummaryKey(item)]?.text && (
+                    {summaryState?.text && (
                       <pre className="mt-3 whitespace-pre-wrap break-words text-sm bg-black/35 rounded-md p-3 border border-white/10">
-                        {summaries[getSummaryKey(item)]?.text}
+                        {summaryState?.text}
                       </pre>
                     )}
+                        </>
+                      );
+                    })()}
                   </li>
                 ))
               ) : (
