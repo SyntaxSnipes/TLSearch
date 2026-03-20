@@ -35,7 +35,7 @@ function NavBar() {
 
         <div className="hidden md:flex items-center gap-4 text-sm text-white/80">
           <span className="rounded-full border border-white/20 px-3 py-1">
-            NASA Space Apps 2026
+            NASA Space Apps 2025
           </span>
           <span className="text-white/60">Space Biology Search</span>
         </div>
