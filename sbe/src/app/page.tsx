@@ -18,8 +18,9 @@ export default function Home() {
 
 function NavBar() {
   return (
-    <header className="sticky top-0 z-50 w-full h-[93px] flex items-center border-[#444647] border-b bg-[#202124] backdrop-blur">
-      <nav className="flex h-14 w-full max-w-6xl items-center justify-between">
+    <header className="sticky top-0 z-50 w-full h-[93px] flex items-center border-[#444647] border-b bg-[#202124]/95 backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-400/0 via-cyan-300/60 to-cyan-400/0" />
+      <nav className="flex h-14 w-full max-w-6xl mx-auto items-center justify-between px-4">
         <span className="flex flex-row items-center justify-start gap-2 ml-9">
           <Link href={"/"}>
             <Image
@@ -30,6 +31,13 @@ function NavBar() {
             />
           </Link>
         </span>
+
+        <div className="hidden md:flex items-center gap-4 text-sm text-white/80">
+          <span className="rounded-full border border-white/20 px-3 py-1">
+            NASA Space Apps 2026
+          </span>
+          <span className="text-white/60">Space Biology Search</span>
+        </div>
       </nav>
     </header>
   );
@@ -52,6 +60,11 @@ function SearchHero() {
         <h1 className="text-[3rem] font-semibold tracking-tight text-[#FFFEFE]">
           Space Biology Engine
         </h1>
+        <div className="flex items-center gap-2 text-xs text-white/80">
+          <span className="rounded-full border border-cyan-200/40 bg-cyan-300/10 px-3 py-1">600+ Publications</span>
+          <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1">Semantic Ranking</span>
+          <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1">Per-paper AI Summary</span>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full flex justify-center">
@@ -70,7 +83,7 @@ function SearchHero() {
           />
           <button
             type="submit"
-            className="rounded-2xl bg-gray-500 px-4 py-2 text-sm transition hover:bg-gray-50 hover:text-shadow-black text-white"
+            className="rounded-2xl bg-gray-500 px-4 py-2 text-sm text-white transition hover:bg-gray-50 hover:text-black hover:shadow-[0_0_20px_rgba(34,211,238,0.35)]"
           >
             Search
           </button>
@@ -101,7 +114,7 @@ function Footer() {
           </a>
           <span>•</span>
           <span>
-            {new Date().getFullYear()} TerraLumen Space Biology Engine
+            2025 TerraLumen Space Biology Engine
           </span>
         </div>
       </div>

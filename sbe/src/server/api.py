@@ -2,17 +2,26 @@
 from fastapi import FastAPI
 from fastapi import Query
 from fastapi.middleware.cors import CORSMiddleware
-import dataprocessing as dp
 import pandas
-from models import Paper
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
+
+try:
+    from . import dataprocessing as dp
+    from .models import Paper
+except ImportError:
+    import dataprocessing as dp
+    from models import Paper
 
 app = FastAPI()
 
-# Allow CORS for all origins (for development purposes only)
+# Configure CORS via BACKEND_CORS_ORIGINS (comma-separated).
+allowedOrigins = [o.strip() for o in os.getenv("BACKEND_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["*"],
-    allow_credentials = True,
+    allow_origins = allowedOrigins,
+    allow_credentials = False,
     allow_methods = ["GET"],
     allow_headers = ["*"],
 )
@@ -20,17 +29,26 @@ app.add_middleware(
 data = dp.dataPreProcessing()
 
 
+def _previewForLink(link: str) -> str:
+    content = dp.scrapePaper(link)
+    return content[0] if len(content) > 0 else ""
+
+
 def formatDFtoPaper(df: pandas.DataFrame) -> list[Paper]:
     papersList = []
     lenPara1 = 50
     for _ , row in df.iterrows():
+        para1 = str(row.get("ContentPara1", "")).strip()
+        if para1:
+            para1 = " ".join(para1.split()[:lenPara1]) + "..."
+        else:
+            para1 = f"Overview unavailable for now. Open paper or use AI Summary: {row['Title']}"
+
         papersList.append(Paper(
             title = row["Title"],
             url = row["Link"],
             paperID = row["id"],
-
-            # Getting the first 200 words of the first paragraph of the content
-            contentPara1 = " ".join(row["ContentPara1"].split()[:lenPara1]) + "..."
+            contentPara1 = para1
         ))
     return papersList
 
@@ -39,17 +57,49 @@ def formatDFtoPaper(df: pandas.DataFrame) -> list[Paper]:
 def root_path():
     return {"message": "Hello World"}
 
+
+@app.get("/healthz")
+def healthcheck():
+    return {"status": "ok"}
+
 @app.get("/papers")
-async def root(searchQuery: str = "", searchNum: int = 4):
-    if searchNum > 15:
-        searchNum = 15
+async def root(
+    searchQuery: str = "",
+    searchNum: int = 4,
+    includeContent: bool = Query(True, description = "Whether to scrape linked pages for preview text"),
+    contentLimit: int = Query(6, description = "Maximum number of matched papers to scrape when includeContent=true")
+):
+    if searchNum > 100:
+        searchNum = 100
+
+    if searchNum < 1:
+        searchNum = 1
     
     matchedPapers = dp.findSearchMatch(searchQuery, data, searchNum)
-    matchedPapers = matchedPapers.drop(columns = ["Embedding", "Similarity"])
-    
-    matchedPapers["Content"] = matchedPapers["Link"].apply(dp.scrapePaper)
+    matchedPapers = matchedPapers.drop(columns = ["Embedding", "Similarity", "EmbeddingVector"], errors = "ignore")
+    matchedPapers["ContentPara1"] = ""
 
-    matchedPapers["ContentPara1"] = matchedPapers["Content"].apply(lambda x: x[0] if len(x) > 0 else "")
+    if includeContent and len(matchedPapers) > 0:
+        safeContentLimit = max(1, min(contentLimit, len(matchedPapers), 25))
+        previewDF = matchedPapers.head(safeContentLimit).copy()
+
+        previews = {idx: "" for idx in previewDF.index}
+        with ThreadPoolExecutor(max_workers = min(8, safeContentLimit)) as executor:
+            futureByIndex = {
+                executor.submit(_previewForLink, row["Link"]): idx
+                for idx, row in previewDF.iterrows()
+            }
+
+            for future in as_completed(futureByIndex):
+                idx = futureByIndex[future]
+                try:
+                    previews[idx] = future.result()
+                except Exception:
+                    previews[idx] = ""
+
+        previewDF["ContentPara1"] = previewDF.index.map(lambda idx: previews.get(idx, ""))
+
+        matchedPapers.loc[previewDF.index, "ContentPara1"] = previewDF["ContentPara1"]
 
     # Line to generate a summary of text
     # matchedPapers["Summary"] = matchedPapers["Content"].apply(dp.summarizeText)
@@ -57,8 +107,19 @@ async def root(searchQuery: str = "", searchNum: int = 4):
     return formatDFtoPaper(matchedPapers)
     
 @app.get("/summary")
-async def summarize_paper(link: str = Query(..., description = "URL of the paper to summarize")):
+async def summarize_paper(
+    link: str = Query(..., description = "URL of the paper to summarize"),
+    title: str = Query("", description = "Paper title for fallback summary generation")
+):
     content = dp.scrapePaper(link)
+
+    if not content:
+        return {
+            "url": link,
+            "summary": dp.fallbackSummaryFromTitle(title),
+            "source": "fallback"
+        }
+
     fullText = " ".join(content)
 
     # Using the summarisation function from ChatGPTFunctions class
@@ -66,6 +127,7 @@ async def summarize_paper(link: str = Query(..., description = "URL of the paper
 
     return{
         "url": link,
-        "summary": summary
+        "summary": summary,
+        "source": "openai" if dp.hasOpenAIKey() else "fallback"
     }
 

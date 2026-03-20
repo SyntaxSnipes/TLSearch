@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 
 // Toggle between mock and proxy easily
 const USE_BACKEND = process.env.USE_BACKEND === "1";
-const API_ORIGIN = process.env.API_ORIGIN || "http://localhost:8000";
+
+function getApiOrigin() {
+  const configured = process.env.API_ORIGIN?.trim();
+  // Guard against misconfiguration that points back to Next.js itself.
+  if (
+    configured?.includes("localhost:3000") ||
+    configured?.includes("127.0.0.1:3000")
+  ) {
+    return "http://127.0.0.1:8000";
+  }
+  return configured || "http://127.0.0.1:8000";
+}
 
 type SearchItem = {
   id: string;
@@ -30,7 +41,7 @@ export async function GET(req: Request) {
 
   // Proxy to FastAPI when ready
   try {
-    const target = new URL("/search", API_ORIGIN);
+    const target = new URL("/search", getApiOrigin());
     searchParams.forEach((v, k) => target.searchParams.set(k, v));
 
     const resp = await fetch(target.toString(), {

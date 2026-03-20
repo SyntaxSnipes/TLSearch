@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 export default function VantaBackground() {
   const ref = useRef<HTMLDivElement>(null);
-  const [effect, setEffect] = useState<any>(null);
+  const [effect, setEffect] = useState<{ destroy?: () => void } | null>(null);
 
   useEffect(() => {
     let mounted = true;

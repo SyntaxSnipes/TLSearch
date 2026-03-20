@@ -1,5 +1,5 @@
-// sbe/src/app/api/papers/route.ts
 import { NextResponse } from "next/server";
+
 export const runtime = "nodejs";
 
 function getApiOrigin() {
@@ -16,15 +16,26 @@ function getApiOrigin() {
 
 export async function GET(req: Request) {
   const u = new URL(req.url);
-  const target = new URL("/papers", getApiOrigin());
+  const link = u.searchParams.get("link")?.trim();
+  const title = u.searchParams.get("title")?.trim();
 
-  u.searchParams.forEach((v, k) => target.searchParams.set(k, v));
+  if (!link) {
+    return NextResponse.json(
+      { error: "Missing required query parameter: link" },
+      { status: 400 }
+    );
+  }
+
+  const target = new URL("/summary", getApiOrigin());
+  target.searchParams.set("link", link);
+  if (title) target.searchParams.set("title", title);
 
   try {
     const resp = await fetch(target.toString(), {
       headers: { accept: "application/json" },
       cache: "no-store",
     });
+
     const body = await resp.text();
     return new NextResponse(body || "{}", {
       status: resp.status,
