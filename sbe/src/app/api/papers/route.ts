@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // sbe/src/app/api/papers/route.ts
 import { NextResponse } from "next/server";
 export const runtime = "nodejs";
