@@ -238,32 +238,33 @@ export default function SearchResults({
 
   return (
     <>
-      <nav className="relative flex flex-row py-4 bg-[#202124]/95 gap-5 border-[#444647] border-b items-center">
+      <nav className="relative flex flex-wrap py-3 sm:py-4 bg-[#202124]/95 gap-3 sm:gap-5 border-[#444647] border-b items-center px-3 sm:px-0">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-400/0 via-cyan-300/60 to-cyan-400/0" />
-        <span className="flex flex-row items-center justify-start gap-2 ml-9 mr-4">
+        <span className="flex flex-row items-center justify-start gap-2 sm:ml-9 sm:mr-4">
           <Link href={"/"}>
             <Image
               src="/logos/TLsearch.svg"
               alt="Logo"
-              width={100}
-              height={50}
+              width={94}
+              height={44}
+              className="h-auto w-[88px] sm:w-[94px]"
             />
           </Link>
         </span>
-        <form onSubmit={handleSubmit} className="flex justify-center">
-          <div className="group flex w-[678px] max-w-full items-center gap-2 rounded-full bg-[#4d5156] px-4 py-3 m-0 shadow-sm transition">
+        <form onSubmit={handleSubmit} className="flex justify-center w-full sm:w-auto sm:flex-1 sm:max-w-[720px]">
+          <div className="group flex w-full items-center gap-2 rounded-2xl sm:rounded-full bg-[#4d5156] px-3 sm:px-4 py-2.5 sm:py-3 m-0 shadow-sm transition">
             <input
               autoFocus
               type="text"
               name="q"
               defaultValue={q}
               placeholder="Search experiments, datasets, assays…"
-              className="mx-2 w-full bg-transparent text-[15px] outline-none text-[#FFFEFE] placeholder:text-gray-400"
+              className="mx-1 sm:mx-2 w-full bg-transparent text-[15px] outline-none text-[#FFFEFE] placeholder:text-gray-400"
               aria-label="Search"
             />
             <button
               type="submit"
-              className="rounded-2xl bg-gray-500 px-4 py-2 text-sm text-white transition hover:bg-gray-50 hover:text-black"
+              className="shrink-0 rounded-xl sm:rounded-2xl bg-gray-500 px-3 sm:px-4 py-2 text-sm text-white transition hover:bg-gray-50 hover:text-black"
             >
               Search
             </button>
@@ -278,8 +279,8 @@ export default function SearchResults({
         </div>
       </nav>
 
-      <div className="p-6 text-[#FFFEFE] min-h-dvh">
-        <h1 className="mb-2 text-2xl">
+      <div className="p-4 sm:p-6 text-[#FFFEFE] min-h-dvh">
+        <h1 className="mb-2 text-xl sm:text-2xl break-words">
           Results for <span className="opacity-90">“{q}”</span>
         </h1>
         {!loading && !error && (
@@ -306,7 +307,7 @@ export default function SearchResults({
                 pageItems.map((item, idx) => (
                   <li
                     key={item.paperID ?? `${startIdx}-${idx}`}
-                    className="opacity-90 text-xl rounded-xl border border-white/10 bg-black/20 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:shadow-[0_10px_30px_rgba(34,211,238,0.18)]"
+                    className="opacity-90 text-base sm:text-xl rounded-xl border border-white/10 bg-black/20 p-3 sm:p-4 transition duration-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:shadow-[0_10px_30px_rgba(34,211,238,0.18)]"
                   >
                     <Link
                       href={item.url}
@@ -320,7 +321,7 @@ export default function SearchResults({
                       </p>
                     )}
 
-                    <div className="mt-4 flex items-center gap-3">
+                    <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
                       <button
                         type="button"
                         onClick={() => fetchSummary(item)}
@@ -347,7 +348,7 @@ export default function SearchResults({
                     )}
 
                     {summaries[getSummaryKey(item)]?.text && (
-                      <pre className="mt-3 whitespace-pre-wrap text-sm bg-black/35 rounded-md p-3 border border-white/10">
+                      <pre className="mt-3 whitespace-pre-wrap break-words text-sm bg-black/35 rounded-md p-3 border border-white/10">
                         {summaries[getSummaryKey(item)]?.text}
                       </pre>
                     )}
@@ -360,9 +361,9 @@ export default function SearchResults({
 
             {/* Pagination controls */}
             {totalPages > 1 && (
-              <div className="mt-8">
-                <Pagination>
-                  <PaginationContent>
+              <div className="mt-8 overflow-x-auto pb-1">
+                <Pagination className="justify-start sm:justify-center min-w-max">
+                  <PaginationContent className="min-w-max">
                     <PaginationItem>
                       <PaginationPrevious
                         href={clampedPage > 1 ? `?p=${clampedPage - 1}` : "#"}
