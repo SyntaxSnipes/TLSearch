@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="relative min-h-screen text-white">
+      <body className={`${plusJakartaSans.variable} relative min-h-screen text-white`}>
         <VantaBackground />
         <div className="fixed inset-0 bg-[#000]/85 pointer-events-none -z-10" />
         {children}
