@@ -10,6 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
   title: "TLSearch",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="fixed inset-0 bg-[#000]/85 pointer-events-none -z-10" />
         {children}
       </body>
+      <GoogleAnalytics gaId="G-2XC2YVMQV8" />
     </html>
   );
 }
