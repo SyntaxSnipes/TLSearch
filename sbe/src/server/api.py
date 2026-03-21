@@ -42,7 +42,13 @@ def formatDFtoPaper(df: pandas.DataFrame) -> list[Paper]:
         if para1:
             para1 = " ".join(para1.split()[:lenPara1]) + "..."
         else:
-            para1 = f"Overview unavailable for now. Open paper or use AI Summary: {row['Title']}"
+            title = str(row.get("Title", "")).strip()
+            para1 = (
+                f"This paper examines {title.lower()} in a space biology context. "
+                "Open the source link for full details or use AI Summary for a deeper breakdown."
+                if title
+                else "Open the source link for full details or use AI Summary for a deeper breakdown."
+            )
 
         papersList.append(Paper(
             title = row["Title"],
