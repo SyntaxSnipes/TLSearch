@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import pandas
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
+import re
 
 try:
     from . import dataprocessing as dp
@@ -34,6 +35,63 @@ def _previewForLink(link: str) -> str:
     return content[0] if len(content) > 0 else ""
 
 
+def _smartOverviewFromTitle(title: str) -> str:
+    cleanTitle = " ".join(str(title).split()).strip()
+    if not cleanTitle:
+        return "Space-biology publication. Open the source link for details or use AI Summary for a deeper breakdown."
+
+    lowered = cleanTitle.lower()
+
+    organismPatterns = [
+        (r"\bmice?\b|\bmouse\b", "mouse biology"),
+        (r"\brats?\b|\brat\b", "rat biology"),
+        (r"\byeast\b", "yeast biology"),
+        (r"\barabidopsis\b|\bplant\b", "plant biology"),
+        (r"\bhuman\b|\bhumans\b", "human biology"),
+        (r"\bbacteria\b|\bbacterial\b|\bmicrobe\b", "microbial biology"),
+        (r"\bcell\b|\bcells\b", "cellular systems"),
+    ]
+
+    contextPatterns = [
+        (r"\bmicrogravity\b|\bspaceflight\b|\borbit\b|\biss\b", "under spaceflight conditions"),
+        (r"\bradiation\b", "with radiation exposure"),
+        (r"\bgravity\b", "with altered-gravity conditions"),
+        (r"\bflight\b", "during mission operations"),
+    ]
+
+    methodPatterns = [
+        (r"\brna[- ]?seq\b|\btranscriptom", "transcriptomic profiling"),
+        (r"\bproteom", "proteomic analysis"),
+        (r"\bmetabol", "metabolomic analysis"),
+        (r"\bmodel\b|\bsimulation\b", "computational modeling"),
+        (r"\bassay\b|\bexperiment\b", "experimental assay data"),
+    ]
+
+    outcomePatterns = [
+        (r"\bgrowth\b", "growth dynamics"),
+        (r"\brepair\b|\bdna\b", "genome stability and repair pathways"),
+        (r"\bimmune\b|\binflammation\b", "immune-response signals"),
+        (r"\bstress\b|\boxidative\b", "stress-response behavior"),
+        (r"\badapt", "adaptive biological responses"),
+    ]
+
+    def pick(patterns: list[tuple[str, str]], default: str) -> str:
+        for pattern, label in patterns:
+            if re.search(pattern, lowered):
+                return label
+        return default
+
+    organism = pick(organismPatterns, "biological samples")
+    context = pick(contextPatterns, "in space-biology settings")
+    method = pick(methodPatterns, "study measurements")
+    outcome = pick(outcomePatterns, "biological response patterns")
+
+    return (
+        f"This publication investigates {organism} {context}, using {method} to characterize {outcome}. "
+        f"Focus topic: {cleanTitle}. Open the source link for full methods and results, or use AI Summary for deeper detail."
+    )
+
+
 def formatDFtoPaper(df: pandas.DataFrame) -> list[Paper]:
     papersList = []
     lenPara1 = 50
@@ -42,13 +100,7 @@ def formatDFtoPaper(df: pandas.DataFrame) -> list[Paper]:
         if para1:
             para1 = " ".join(para1.split()[:lenPara1]) + "..."
         else:
-            title = str(row.get("Title", "")).strip()
-            para1 = (
-                f"This paper examines {title.lower()} in a space biology context. "
-                "Open the source link for full details or use AI Summary for a deeper breakdown."
-                if title
-                else "Open the source link for full details or use AI Summary for a deeper breakdown."
-            )
+            para1 = _smartOverviewFromTitle(str(row.get("Title", "")))
 
         papersList.append(Paper(
             title = row["Title"],
