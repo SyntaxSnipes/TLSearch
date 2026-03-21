@@ -112,19 +112,17 @@ export default function SearchResults({
       setLoading(true);
       setError(null);
       try {
-        const qs = new URLSearchParams({ searchQuery: q, searchNum: "100" });
+        const qs = new URLSearchParams({
+          searchQuery: q,
+          searchNum: "100",
+          includeContent: "false",
+        });
         const res = await fetch(`/api/papers?${qs.toString()}`, {
           cache: "no-store",
         });
         if (!res.ok) throw new Error(String(res.status));
 
-        const text = await res.text();
-        let data: unknown;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = text;
-        }
+        const data = (await res.json()) as unknown;
 
         const list = normalizeResults(data);
 
@@ -243,44 +241,47 @@ export default function SearchResults({
 
   return (
     <>
-      <nav className="relative flex flex-wrap py-3 sm:py-4 bg-[#202124]/95 gap-3 sm:gap-5 border-[#444647] border-b items-center px-3 sm:px-0">
+      <nav className="relative border-[#444647] border-b bg-[#202124]/95 px-3 py-3 sm:px-0 sm:py-4">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-400/0 via-cyan-300/60 to-cyan-400/0" />
-        <span className="flex flex-row items-center justify-start gap-2 sm:ml-9 sm:mr-4">
-          <Link href={"/"}>
-            <Image
-              src="/logos/TLsearch.svg"
-              alt="Logo"
-              width={94}
-              height={44}
-              className="h-auto w-[88px] sm:w-[94px]"
-            />
-          </Link>
-        </span>
-        <form onSubmit={handleSubmit} className="flex justify-center w-full sm:w-auto sm:flex-1 sm:max-w-[720px]">
-          <div className="group flex w-full items-center gap-2 rounded-2xl sm:rounded-full bg-[#4d5156] px-3 sm:px-4 py-2.5 sm:py-3 m-0 shadow-sm transition">
-            <input
-              autoFocus
-              type="text"
-              name="q"
-              defaultValue={q}
-              placeholder="Search experiments, datasets, assays…"
-              className="mx-1 sm:mx-2 w-full bg-transparent text-[15px] outline-none text-[#FFFEFE] placeholder:text-gray-400"
-              aria-label="Search"
-            />
-            <button
-              type="submit"
-              className="shrink-0 rounded-xl sm:rounded-2xl bg-gray-500 px-3 sm:px-4 py-2 text-sm text-white transition hover:bg-gray-50 hover:text-black"
-            >
-              Search
-            </button>
-          </div>
-        </form>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <span className="flex flex-row items-center justify-start gap-2 sm:ml-3 sm:mr-2">
+            <Link href={"/"}>
+              <Image
+                src="/logos/TLsearch.svg"
+                alt="Logo"
+                width={94}
+                height={44}
+                className="h-auto w-[88px] sm:w-[94px]"
+              />
+            </Link>
+          </span>
 
-        <div className="ml-auto mr-8 hidden lg:flex items-center gap-3 text-xs text-white/80">
-          <span className="rounded-full border border-white/25 px-3 py-1">AI Summary Enabled</span>
-          {!loading && !error && (
-            <span className="text-white/65">{total} results</span>
-          )}
+          <form onSubmit={handleSubmit} className="flex w-full sm:flex-1 sm:max-w-[720px]">
+            <div className="group flex w-full items-center gap-2 rounded-2xl sm:rounded-full bg-[#4d5156] px-3 py-2.5 shadow-sm transition sm:px-4 sm:py-3">
+              <input
+                autoFocus
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder="Search experiments, datasets, assays..."
+                className="mx-1 w-full bg-transparent text-[15px] text-[#FFFEFE] outline-none placeholder:text-gray-400 sm:mx-2"
+                aria-label="Search"
+              />
+              <button
+                type="submit"
+                className="shrink-0 rounded-xl bg-gray-500 px-3 py-2 text-sm text-white transition hover:bg-gray-50 hover:text-black sm:rounded-2xl sm:px-4"
+              >
+                Search
+              </button>
+            </div>
+          </form>
+
+          <div className="hidden items-center gap-3 text-xs text-white/80 lg:ml-auto lg:mr-4 lg:flex">
+            <span className="rounded-full border border-white/25 px-3 py-1">AI Summary Enabled</span>
+            {!loading && !error && (
+              <span className="text-white/65">{total} results</span>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -378,8 +379,8 @@ export default function SearchResults({
 
             {/* Pagination controls */}
             {totalPages > 1 && (
-              <div className="mt-8 overflow-x-auto pb-1">
-                <Pagination className="justify-start sm:justify-center min-w-max">
+              <div className="mt-8 flex justify-center overflow-x-auto pb-1">
+                <Pagination className="min-w-max">
                   <PaginationContent className="min-w-max">
                     <PaginationItem>
                       <PaginationPrevious
@@ -412,7 +413,11 @@ export default function SearchResults({
                             <PaginationLink
                               href={p === 1 ? "" : `?p=${p}`}
                               isActive={p === clampedPage}
-                              className="text-white hover:text-black hover:bg-white"
+                              className={
+                                p === clampedPage
+                                  ? "border-white/60 bg-white text-black hover:bg-white"
+                                  : "text-white hover:bg-white hover:text-black"
+                              }
                               onClick={(e) => {
                                 e.preventDefault();
                                 gotoPage(p);

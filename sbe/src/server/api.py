@@ -66,7 +66,7 @@ def healthcheck():
 async def root(
     searchQuery: str = "",
     searchNum: int = 4,
-    includeContent: bool = Query(True, description = "Whether to scrape linked pages for preview text"),
+    includeContent: bool = Query(False, description = "Whether to scrape linked pages for preview text"),
     contentLimit: int = Query(6, description = "Maximum number of matched papers to scrape when includeContent=true")
 ):
     if searchNum > 100:

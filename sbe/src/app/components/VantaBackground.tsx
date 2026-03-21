@@ -1,16 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
 
 export default function VantaBackground() {
   const ref = useRef<HTMLDivElement>(null);
   const [effect, setEffect] = useState<{ destroy?: () => void } | null>(null);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
     let mounted = true;
-    (async () => {
-      const VANTA = (await import("vanta/dist/vanta.globe.min.js")).default;
+
+    const init = async () => {
+      const [THREE, vantaModule] = await Promise.all([
+        import("three"),
+        import("vanta/dist/vanta.globe.min.js"),
+      ]);
+      const VANTA = vantaModule.default;
+
       if (mounted && !effect && ref.current) {
         const e = VANTA({
           el: ref.current,
@@ -27,9 +37,37 @@ export default function VantaBackground() {
         });
         setEffect(e);
       }
-    })();
+    };
+
+    let idleHandle: number | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+    if ("requestIdleCallback" in globalThis) {
+      idleHandle = (
+        globalThis as typeof globalThis & {
+          requestIdleCallback: (cb: () => void) => number;
+        }
+      ).requestIdleCallback(() => {
+        void init();
+      });
+    } else {
+      timeoutHandle = setTimeout(() => {
+        void init();
+      }, 250);
+    }
+
     return () => {
       mounted = false;
+      if (idleHandle !== null && "cancelIdleCallback" in globalThis) {
+        (
+          globalThis as typeof globalThis & {
+            cancelIdleCallback: (id: number) => void;
+          }
+        ).cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== null) {
+        clearTimeout(timeoutHandle);
+      }
       effect?.destroy?.();
     };
   }, [effect]);
