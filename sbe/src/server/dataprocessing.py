@@ -359,6 +359,10 @@ def dataPreProcessing() -> pd.DataFrame:
 
     data = pd.read_csv(dataPath)
 
+    # MIB: Extra code to drop any duplicates in data,
+    # inplace param edits data pandas dataframe directly
+    data.drop_duplicates(keep='first', inplace = True)
+
     # Load the file for word embeddings and add it to the dataframe
     try:
         with open(embeddingsPath, "r") as embeddingsFile:
